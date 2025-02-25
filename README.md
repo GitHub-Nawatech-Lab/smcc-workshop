@@ -27,15 +27,15 @@ This project contains an Apache Airflow DAG that extracts data from PostgreSQL, 
 
 The DAG performs the following tasks:
 
-1. **Extracts data from PostgreSQL**: Uses a [PythonOperator](http://_vscodecontentref_/1) to run a Python function that extracts data from PostgreSQL, drops missing values, and saves the cleaned data to a CSV file.
-2. **Uploads cleaned data to HDFS**: Uses a [BashOperator](http://_vscodecontentref_/2) to upload the cleaned CSV file to HDFS.
-3. **Creates an external Hive table**: Uses a [HiveOperator](http://_vscodecontentref_/3) to create an external Hive table for Superset visualization.
-4. **Loads data from HDFS into the Hive table**: Uses a [HiveOperator](http://_vscodecontentref_/4) to load the data from HDFS into the Hive table.
-5. **Cleans up temporary files**: Uses a [BashOperator](http://_vscodecontentref_/5) to remove the temporary CSV file.
+1. **Extracts data from PostgreSQL**: Uses a [PythonOperator](https://airflow.apache.org/docs/apache-airflow/stable/howto/operator/python.html) to run a Python function that extracts data from PostgreSQL, drops missing values, and saves the cleaned data to a CSV file.
+2. **Uploads cleaned data to HDFS**: Uses a [BashOperator](https://airflow.apache.org/docs/apache-airflow/stable/howto/operator/bash.html) to upload the cleaned CSV file to HDFS.
+3. **Creates an external Hive table**: Uses a [HiveOperator](https://airflow.apache.org/docs/apache-airflow-providers-apache-hive/stable/operators.html) to create an external Hive table for Superset visualization.
+4. **Loads data from HDFS into the Hive table**: Uses a [HiveOperator](https://airflow.apache.org/docs/apache-airflow-providers-apache-hive/stable/operators.html) to load the data from HDFS into the Hive table.
+5. **Cleans up temporary files**: Uses a [BashOperator](https://airflow.apache.org/docs/apache-airflow/stable/howto/operator/bash.html) to remove the temporary CSV file.
 
 ## DAG Configuration
 
-The DAG is defined in [dag_airflow.py](http://_vscodecontentref_/6). It is scheduled to run daily starting from January 1, 2024.
+The DAG is defined in [dag_airflow.py](dags/dag_airflow.py). It is scheduled to run daily starting from January 1, 2024.
 
 ### Connections
 
@@ -54,4 +54,4 @@ The DAG is defined in [dag_airflow.py](http://_vscodecontentref_/6). It is sched
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](http://_vscodecontentref_/7) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
