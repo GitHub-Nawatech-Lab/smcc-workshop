@@ -1,7 +1,8 @@
 from airflow import DAG
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.apache.hive.operators.hive import HiveOperator
-from airflow.operators.python import PythonOperator, BashOperator
+from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator
 from datetime import datetime
 import pandas as pd
 
