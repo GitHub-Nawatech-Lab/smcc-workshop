@@ -44,7 +44,7 @@ extract_task = PythonOperator(
 
 put_to_hdfs = BashOperator(
     task_id="upload_to_hdfs",
-    bash_command="hdfs put /tmp/data_cleaned.csv /user/hive/warehouse/metastore.db/sales_data/",
+    bash_command="curl -i -X PUT -T /tmp/data_cleaned.csv 'http://smcc-event.nawatech.co:9870/webhdfs/v1/user/hive/warehouse/metastore.db/sales_data/data_cleaned.csv?op=CREATE&overwrite=true'",
     dag=dag
 )
 
