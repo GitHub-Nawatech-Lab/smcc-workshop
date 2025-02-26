@@ -44,7 +44,7 @@ extract_task = PythonOperator(
 
 put_to_hdfs = BashOperator(
     task_id="upload_to_hdfs",
-    bash_command="hdfs dfs -put -f /tmp/data_cleaned.csv /user/hive/warehouse/metastore.db/sales_data/",
+    bash_command="hdfs put /tmp/data_cleaned.csv /user/hive/warehouse/metastore.db/sales_data/",
     dag=dag
 )
 
