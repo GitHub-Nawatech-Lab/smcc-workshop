@@ -18,7 +18,7 @@ dag = DAG(
     "postgres_to_superset",
     description="DAG to extract data from PostgreSQL, clean it, store in HDFS, and create a Hive table for Superset.",
     start_date=datetime(2025, 2, 24),
-    schedule_interval="@daily",
+    schedule_interval="@once",
     tags=["smcc_demo"],
     catchup=False
 )
