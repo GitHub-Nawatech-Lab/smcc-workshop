@@ -1,6 +1,6 @@
 from airflow import DAG
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.providers.apache.hive.operators.hive import HiveOperator, BeelineHiveOperator
+from airflow.providers.apache.hive.operators.hive import HiveOperator
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
 from airflow.utils.dates import days_ago
@@ -52,7 +52,7 @@ put_to_hdfs = BashOperator(
 create_hive_table = HiveOperator(
     task_id="create_hive_table",
     hql="""
-    CREATE EXTERNAL TABLE IF NOT EXISTS metastore.sales (
+    CREATE EXTERNAL TABLE IF NOT EXISTS sales (
         salesordernumber STRING,
         salesorderlinenumber INT,
         orderdate STRING,
@@ -77,7 +77,7 @@ load_hdfs_to_hive = HiveOperator(
     task_id="load_hdfs_to_hive",
     hql="""
     LOAD DATA INPATH '/user/hive/warehouse/sales/data_cleaned.csv' 
-    INTO TABLE metastore.sales_data;
+    INTO TABLE sales;
     """,
     hive_cli_conn_id="smcc_hive_server",
     dag=dag
