@@ -1,8 +1,9 @@
 from airflow import DAG
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.providers.apache.hive.operators.hive import HiveOperator
+from airflow.providers.apache.hive.operators.hive import HiveOperator, BeelineHiveOperator
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
+from airflow.utils.dates import days_ago
 from datetime import datetime
 import pandas as pd
 
@@ -44,7 +45,7 @@ extract_task = PythonOperator(
 
 put_to_hdfs = BashOperator(
     task_id="upload_to_hdfs",
-    bash_command="curl -i -X PUT -T /tmp/data_cleaned.csv 'http://smcc-event.nawatech.co:9870/webhdfs/v1/user/hive/warehouse/metastore.db/sales_data/data_cleaned.csv?op=CREATE&overwrite=true'",
+    bash_command="curl -i -X PUT -T /tmp/data_cleaned.csv 'http://smcc-event.nawatech.co:9870/webhdfs/v1/user/hive/warehouse/sales/data_cleaned.csv?op=CREATE&overwrite=true'",
     dag=dag
 )
 
@@ -65,9 +66,9 @@ create_hive_table = HiveOperator(
     ROW FORMAT DELIMITED
     FIELDS TERMINATED BY ','
     STORED AS TEXTFILE
-    LOCATION '/user/hive/warehouse/metastore.db/sales_data/';
+    LOCATION '/user/hive/warehouse/sales/';
     """,
-    hive_cli_conn_id="smcc_hive",
+    hive_cli_conn_id="smcc_hive_server",
     dag=dag
 )
 
@@ -75,10 +76,10 @@ create_hive_table = HiveOperator(
 load_hdfs_to_hive = HiveOperator(
     task_id="load_hdfs_to_hive",
     hql="""
-    LOAD DATA INPATH '/user/hive/warehouse/metastore.db/sales_data/data_cleaned.csv' 
+    LOAD DATA INPATH '/user/hive/warehouse/sales/data_cleaned.csv' 
     INTO TABLE metastore.sales_data;
     """,
-    hive_cli_conn_id="smcc_hive",
+    hive_cli_conn_id="smcc_hive_server",
     dag=dag
 )
 
