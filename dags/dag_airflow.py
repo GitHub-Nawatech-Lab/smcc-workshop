@@ -1,6 +1,6 @@
 from airflow import DAG
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.providers.common.sql.hooks.sql import DbApiHook  # Generic SQL Hook
+from airflow_clickhouse_plugin.hooks.clickhouse_hook import ClickHouseHook
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
 from datetime import datetime
@@ -15,9 +15,9 @@ def extract_postgres():
     df_cleaned.to_csv('/tmp/data_cleaned.csv', index=False)
 
 def load_to_clickhouse():
-    """Loads cleaned data into ClickHouse using Airflow's generic SQL Hook."""
-    ch_hook = DbApiHook.get_hook(conn_id="smcc_clickhouse")  # Use existing connection
-    
+    """Loads cleaned data into ClickHouse using Airflow's ClickHouse Hook."""
+    ch_hook = ClickHouseHook(clickhouse_conn_id="smcc_clickhouse")  # Use existing connection
+
     # Ensure the table exists
     create_table_query = """
     CREATE TABLE IF NOT EXISTS sales (
@@ -33,19 +33,13 @@ def load_to_clickhouse():
     ) ENGINE = MergeTree()
     ORDER BY salesordernumber;
     """
-    conn = ch_hook.get_conn()
-    cursor = conn.cursor()
-    cursor.execute(create_table_query)
-    conn.commit()
+    ch_hook.run(create_table_query)
 
     # Read the cleaned data and insert it into ClickHouse
     df = pd.read_csv('/tmp/data_cleaned.csv')
     data = [tuple(row) for row in df.itertuples(index=False, name=None)]
     insert_query = "INSERT INTO sales VALUES"
-    cursor.executemany(insert_query, data)
-    conn.commit()
-    cursor.close()
-    conn.close()
+    ch_hook.run(insert_query, parameters=data)
 
 dag = DAG(
     "postgres_to_clickhouse",
