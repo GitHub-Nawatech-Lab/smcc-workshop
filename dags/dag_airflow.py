@@ -39,7 +39,7 @@ def load_to_clickhouse():
     df = pd.read_csv('/tmp/data_cleaned.csv')
     data = [tuple(row) for row in df.itertuples(index=False, name=None)]
     insert_query = "INSERT INTO sales VALUES"
-    ch_hook.execute(insert_query, parameters=data)
+    ch_hook.execute(insert_query, data)
 
 dag = DAG(
     "postgres_to_clickhouse",
