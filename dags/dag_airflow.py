@@ -33,13 +33,13 @@ def load_to_clickhouse():
     ) ENGINE = MergeTree()
     ORDER BY salesordernumber;
     """
-    ch_hook.run(create_table_query)
+    ch_hook.execute(create_table_query)
 
     # Read the cleaned data and insert it into ClickHouse
     df = pd.read_csv('/tmp/data_cleaned.csv')
     data = [tuple(row) for row in df.itertuples(index=False, name=None)]
     insert_query = "INSERT INTO sales VALUES"
-    ch_hook.run(insert_query, parameters=data)
+    ch_hook.execute(insert_query, parameters=data)
 
 dag = DAG(
     "postgres_to_clickhouse",
