@@ -9,7 +9,7 @@ import pandas as pd
 def extract_postgres():
     """Extracts data from PostgreSQL, drops missing values, and saves to CSV."""
     pg_hook = PostgresHook(postgres_conn_id="smcc_postgres")
-    sql = "SELECT * FROM sales"
+    sql = "SELECT * FROM sales_orders"
     df = pd.read_sql(sql, pg_hook.get_conn())
     df_cleaned = df.dropna()
     df_cleaned.to_csv('/tmp/data_cleaned.csv', index=False)
