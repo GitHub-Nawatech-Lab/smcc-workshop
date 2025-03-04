@@ -1,9 +1,8 @@
 from airflow import DAG
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.providers.apache.hive.operators.hive import HiveOperator
+from airflow.providers.clickhouse.hooks.clickhouse import ClickHouseHook
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
-from airflow.utils.dates import days_ago
 from datetime import datetime
 import pandas as pd
 
@@ -15,27 +14,41 @@ def extract_postgres():
     df_cleaned = df.dropna()
     df_cleaned.to_csv('/tmp/data_cleaned.csv', index=False)
 
+def load_to_clickhouse():
+    """Loads cleaned data into ClickHouse using Airflow ClickHouseHook."""
+    ch_hook = ClickHouseHook(clickhouse_conn_id="smcc_clickhouse")
+    
+    # Ensure the table exists
+    create_table_query = """
+    CREATE TABLE IF NOT EXISTS sales (
+        salesordernumber String,
+        salesorderlinenumber Int32,
+        orderdate String,
+        customername String,
+        emailaddress String,
+        item String,
+        quantity Int32,
+        unitprice Float32,
+        taxamount Float32
+    ) ENGINE = MergeTree()
+    ORDER BY salesordernumber;
+    """
+    ch_hook.run(create_table_query)
+
+    # Read the cleaned data and insert it into ClickHouse
+    df = pd.read_csv('/tmp/data_cleaned.csv')
+    data = [tuple(row) for row in df.itertuples(index=False, name=None)]
+    insert_query = "INSERT INTO sales VALUES"
+    ch_hook.run(insert_query, parameters=data)
+
 dag = DAG(
-    "postgres_to_superset",
-    description="DAG to extract data from PostgreSQL, clean it, store in HDFS, and create a Hive table for Superset.",
+    "postgres_to_clickhouse",
+    description="DAG to extract data from PostgreSQL, clean it, and insert it into ClickHouse.",
     start_date=datetime(2025, 2, 24),
     schedule_interval="@once",
     tags=["smcc_demo"],
     catchup=False
 )
-
-dag.doc_md = """
-### PostgreSQL to Superset DAG
-This DAG performs the following tasks:
-1. Extracts data from PostgreSQL
-2. Cleans data by dropping missing values
-3. Saves cleaned data to HDFS
-4. Creates an external Hive table for Superset visualization
-
-- **Start Date:** February 24, 2025  
-- **Schedule:** Runs daily  
-- **Connections Used:** PostgreSQL, HDFS, Hive
-"""
 
 extract_task = PythonOperator(
     task_id="extract_postgres",
@@ -43,51 +56,16 @@ extract_task = PythonOperator(
     dag=dag
 )
 
-put_to_hdfs = BashOperator(
-    task_id="upload_to_hdfs",
-    bash_command="curl -i -X PUT -T /tmp/data_cleaned.csv 'http://smcc-event.nawatech.co:9870/webhdfs/v1/user/hive/warehouse/sales/data_cleaned.csv?op=CREATE&overwrite=true'",
+load_clickhouse_task = PythonOperator(
+    task_id="load_to_clickhouse",
+    python_callable=load_to_clickhouse,
     dag=dag
 )
 
-create_hive_table = HiveOperator(
-    task_id="create_hive_table",
-    hql="""
-    CREATE EXTERNAL TABLE IF NOT EXISTS sales (
-        salesordernumber STRING,
-        salesorderlinenumber INT,
-        orderdate STRING,
-        customername STRING,
-        emailaddress STRING,
-        item STRING,
-        quantity INT,
-        unitprice FLOAT,
-        taxamount FLOAT
-    )
-    ROW FORMAT DELIMITED
-    FIELDS TERMINATED BY ','
-    STORED AS TEXTFILE
-    LOCATION '/user/hive/warehouse/sales/';
-    """,
-    hive_cli_conn_id="smcc_hive_server",
-    dag=dag
-)
-
-# Step 4: Load data from HDFS into the Hive table
-load_hdfs_to_hive = HiveOperator(
-    task_id="load_hdfs_to_hive",
-    hql="""
-    LOAD DATA INPATH '/user/hive/warehouse/sales/data_cleaned.csv' 
-    INTO TABLE sales;
-    """,
-    hive_cli_conn_id="smcc_hive_server",
-    dag=dag
-)
-
-# Step 5: Cleanup temporary file
 cleanup_task = BashOperator(
     task_id="cleanup_tmp_file",
     bash_command="rm -f /tmp/data_cleaned.csv",
     dag=dag
 )
 
-extract_task >> put_to_hdfs >> create_hive_table >> load_hdfs_to_hive >> cleanup_task
+extract_task >> load_clickhouse_task >> cleanup_task
