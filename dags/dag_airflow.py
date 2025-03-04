@@ -1,6 +1,6 @@
 from airflow import DAG
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow_clickhouse_plugin.hooks.clickhouse_hook import ClickHouseHook
+from airflow_clickhouse_plugin.hooks.clickhouse import ClickHouseHook
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
 from datetime import datetime
